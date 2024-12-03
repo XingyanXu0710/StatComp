@@ -1,0 +1,14 @@
+# Ignore RStudio project files and user-specific files
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+SA24204168.Rproj
+/doc/
+/Meta/
+
+# Ignore build and installation files
+.Rbuildignore
+
+# Ignore Git directory inside inst folder
+inst/.git/
