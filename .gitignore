@@ -12,3 +12,5 @@ SA24204168.Rproj
 
 # Ignore Git directory inside inst folder
 inst/.git/
+src/*.dll
+src/*.o
