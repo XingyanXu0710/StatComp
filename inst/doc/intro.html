@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Xingyan Xu" />
+
+<meta name="date" content="2024-12-05" />
+
+<title>Introduction to linear regression with heterogeneity in panel data</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Introduction to linear regression with
+heterogeneity in panel data</h1>
+<h4 class="author">Xingyan Xu</h4>
+<h4 class="date">2024-12-05</h4>
+
+
+
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p><em>SA24204168</em> is an R package for performing grouped panel data
+regression (implemented through the R package <em>Rcpp</em>). The
+<em>SA24204R.R</em> file contains two user-accessible functions:
+<em>dif</em> and <em>gpd</em>. The purpose of <em>dif</em> is to
+difference both the independent and dependent variables of the panel
+data along the time axis, resulting in differenced variables. This helps
+to effectively eliminate the impact of individual effects on parameter
+estimation. The purpose of <em>gpd</em> is to fit a grouped panel data
+regression model, where it determines the group assignments for each
+panel data unit based on the specified number of groups, estimates the
+corresponding group values, and calculates the estimated IC value to
+evaluate the quality of the model’s estimates.The <em>SA24204C.cpp</em>
+file contains a function count, which calculates the loss function. By
+inputting the panel data x, its corresponding response variable y, the
+estimated intercept value beta, and the specific panel unit index, the
+function returns the loss function value for the i-th panel unit.</p>
+</div>
+<div id="model" class="section level2">
+<h2>model</h2>
+<p>In practical regression tasks, we often encounter situations where
+two groups of regression data with different slopes are mixed together,
+such as:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># 加载必要的包</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># 设置随机数种子，确保可重现性</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># 生成数据</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">20</span>  <span class="co"># 每组20个数据</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># 第一组数据: y = x + epsilon</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>x1 <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="dv">0</span>, <span class="dv">1</span>)  <span class="co"># 自变量 x 服从 U(0, 1)</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>epsilon1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="fl">0.4</span>)  <span class="co"># 噪声 epsilon 服从 N(0, 0.4)</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>y1 <span class="ot">&lt;-</span> x1 <span class="sc">+</span> epsilon1  <span class="co"># 计算响应变量 y</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co"># 第二组数据: y = 3x + epsilon</span></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>x2 <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="dv">0</span>, <span class="dv">1</span>)  <span class="co"># 自变量 x 服从 U(0, 1)</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>epsilon2 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="fl">0.4</span>)  <span class="co"># 噪声 epsilon 服从 N(0, 0.4)</span></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a>y2 <span class="ot">&lt;-</span> <span class="dv">5</span> <span class="sc">*</span> x2 <span class="sc">+</span> epsilon2  <span class="co"># 计算响应变量 y</span></span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="co"># 合并数据</span></span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a>  <span class="at">x =</span> <span class="fu">c</span>(x1, x2),</span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a>  <span class="at">y =</span> <span class="fu">c</span>(y1, y2),</span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a>  <span class="at">group =</span> <span class="fu">factor</span>(<span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">each =</span> n))  <span class="co"># 分组标签</span></span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a>)</span>
+<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" tabindex="-1"></a><span class="co"># 做回归分析</span></span>
+<span id="cb1-28"><a href="#cb1-28" tabindex="-1"></a>model1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> data[data<span class="sc">$</span>group <span class="sc">==</span> <span class="dv">1</span>, ])</span>
+<span id="cb1-29"><a href="#cb1-29" tabindex="-1"></a>model2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> data[data<span class="sc">$</span>group <span class="sc">==</span> <span class="dv">2</span>, ])</span>
+<span id="cb1-30"><a href="#cb1-30" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" tabindex="-1"></a><span class="co"># 整体回归模型 (使用所有数据)</span></span>
+<span id="cb1-32"><a href="#cb1-32" tabindex="-1"></a>model_all <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> data)</span>
+<span id="cb1-33"><a href="#cb1-33" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" tabindex="-1"></a><span class="co"># 画回归图</span></span>
+<span id="cb1-35"><a href="#cb1-35" tabindex="-1"></a><span class="fu">ggplot</span>(data, <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y, <span class="at">color =</span> group)) <span class="sc">+</span></span>
+<span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span>  <span class="co"># 绘制散点</span></span>
+<span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>) <span class="sc">+</span>  <span class="co"># 绘制每组的回归曲线</span></span>
+<span id="cb1-38"><a href="#cb1-38" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> data, <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y), <span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>) <span class="sc">+</span>  <span class="co"># 整体回归线，黑色虚线</span></span>
+<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Regression Lines for Two Groups with Overall Fit&quot;</span>,</span>
+<span id="cb1-40"><a href="#cb1-40" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;x&quot;</span>,</span>
+<span id="cb1-41"><a href="#cb1-41" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">&quot;y&quot;</span>) <span class="sc">+</span></span>
+<span id="cb1-42"><a href="#cb1-42" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;blue&quot;</span>, <span class="st">&quot;red&quot;</span>)) <span class="sc">+</span>  <span class="co"># 设置不同组别的颜色</span></span>
+<span id="cb1-43"><a href="#cb1-43" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div>
+<pre><code>## `geom_smooth()` using formula = &#39;y ~ x&#39;
+## `geom_smooth()` using formula = &#39;y ~ x&#39;</code></pre>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>In the plot, the <strong>blue line</strong> represents the linear
+regression curve fitted to the data generated from the model <span class="math inline">\(y = x + \epsilon\)</span>, where <span class="math inline">\(\epsilon \sim N(0, 0.4)\)</span>. The <strong>red
+line</strong> represents the linear regression curve fitted to the data
+generated from the model <span class="math inline">\(y = 5x +
+\epsilon\)</span>. The <strong>black dashed line</strong> represents the
+linear regression curve fitted to all the data points combined.</p>
+<p>As we can observe, if we fit the data without distinguishing the two
+groups, the slope of the fitted line (black dashed line) differs
+significantly from the true value of 1 (from the first group) and 5
+(from the second group). This demonstrates that the overall regression
+model fails to capture the different behaviors in the two groups,
+leading to poor model fit.</p>
+<p>We primarily consider the following model:</p>
+<p><span class="math display">\[
+y_{it} = \alpha_{i} + x_{it}\beta_{g_i} + \epsilon_{it}, \quad
+\epsilon_{it} \overset{\text{iid}}{\sim} \, N(0, \sigma^2)
+\]</span></p>
+<p>where <span class="math inline">\(i = 1, \dots, n\)</span> represents
+the number of panel data units, <span class="math inline">\(t = 1,
+\dots, T\)</span> represents the time periods， and <span class="math inline">\(\beta_{g_i}\)</span> represents the i-th unit
+belongs to group <span class="math inline">\(g_i\)</span>, where <span class="math inline">\(g_i=1,2,..,G\)</span>, G is the number of
+groups.</p>
+<p>Therefore, we need to identify the group each sample unit belongs to
+and determine the slope for each group.</p>
+</div>
+<div id="r-function-dif-and-gpd" class="section level2">
+<h2>R function <em>dif</em> and <em>gpd</em></h2>
+<p>Input and output of <em>dif</em> are as follows:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="cf">function</span>(x, y) {</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="co"># Input: Panel scalar data x and its corresponding response variable y.</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="co"># Output: The differenced data x_diff and y_diff along the time axis.</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  n_y <span class="ot">&lt;-</span> <span class="fu">nrow</span>(y)  </span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  t_y <span class="ot">&lt;-</span> <span class="fu">ncol</span>(y)  </span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  </span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  n_x <span class="ot">&lt;-</span> <span class="fu">nrow</span>(x)  </span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  t_x <span class="ot">&lt;-</span> <span class="fu">ncol</span>(x)  </span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  </span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="cf">if</span> (n_y <span class="sc">!=</span> n_x) {</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;The number of rows (n) in x and y must be the same.&quot;</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  }</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  </span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="cf">if</span> (t_y <span class="sc">!=</span> t_x) {</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;The number of columns (t) in x and y must be the same.&quot;</span>)</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  }</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  </span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="cf">if</span> (t_y <span class="sc">&lt;=</span> <span class="dv">1</span>) {</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;The number of columns (t) in both x and y must be greater than 1.&quot;</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  }</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  </span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  y_diff <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> n_y, <span class="at">ncol =</span> t_y <span class="sc">-</span> <span class="dv">1</span>)) </span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>  x_diff <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> n_x, <span class="at">ncol =</span> t_x <span class="sc">-</span> <span class="dv">1</span>))  </span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_y) {</span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>    <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>t_y) { </span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>      y_diff[i, j <span class="sc">-</span> <span class="dv">1</span>] <span class="ot">&lt;-</span> y[i, j] <span class="sc">-</span> y[i, j <span class="sc">-</span> <span class="dv">1</span>] </span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a>      x_diff[i, j <span class="sc">-</span> <span class="dv">1</span>] <span class="ot">&lt;-</span> x[i, j] <span class="sc">-</span> x[i, j <span class="sc">-</span> <span class="dv">1</span>] </span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>    }</span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>  }</span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>  </span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>  <span class="fu">colnames</span>(y_diff) <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="st">&quot;Y&quot;</span>, <span class="dv">1</span><span class="sc">:</span>(t_y <span class="sc">-</span> <span class="dv">1</span>), <span class="at">sep =</span> <span class="st">&quot;&quot;</span>)  </span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>  <span class="fu">colnames</span>(x_diff) <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="st">&quot;X&quot;</span>, <span class="dv">1</span><span class="sc">:</span>(t_x <span class="sc">-</span> <span class="dv">1</span>), <span class="at">sep =</span> <span class="st">&quot;&quot;</span>)  </span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>  </span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">y_diff =</span> y_diff, <span class="at">x_diff =</span> x_diff))</span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>}</span></code></pre></div>
+<pre><code>## function(x, y) {
+##   # Input: Panel scalar data x and its corresponding response variable y.
+##   # Output: The differenced data x_diff and y_diff along the time axis.
+## 
+##   n_y &lt;- nrow(y)  
+##   t_y &lt;- ncol(y)  
+##   
+##   n_x &lt;- nrow(x)  
+##   t_x &lt;- ncol(x)  
+##   
+##   if (n_y != n_x) {
+##     stop(&quot;The number of rows (n) in x and y must be the same.&quot;)
+##   }
+##   
+##   if (t_y != t_x) {
+##     stop(&quot;The number of columns (t) in x and y must be the same.&quot;)
+##   }
+##   
+##   if (t_y &lt;= 1) {
+##     stop(&quot;The number of columns (t) in both x and y must be greater than 1.&quot;)
+##   }
+##   
+##   y_diff &lt;- data.frame(matrix(NA, nrow = n_y, ncol = t_y - 1)) 
+##   x_diff &lt;- data.frame(matrix(NA, nrow = n_x, ncol = t_x - 1))  
+## 
+##   for (i in 1:n_y) {
+##     for (j in 2:t_y) { 
+##       y_diff[i, j - 1] &lt;- y[i, j] - y[i, j - 1] 
+##       x_diff[i, j - 1] &lt;- x[i, j] - x[i, j - 1] 
+##     }
+##   }
+##   
+##   colnames(y_diff) &lt;- paste(&quot;Y&quot;, 1:(t_y - 1), sep = &quot;&quot;)  
+##   colnames(x_diff) &lt;- paste(&quot;X&quot;, 1:(t_x - 1), sep = &quot;&quot;)  
+##   
+##   return(list(y_diff = y_diff, x_diff = x_diff))
+## }</code></pre>
+<p><strong>Note</strong>: The input matrices <strong>x</strong> and
+<strong>y</strong> are both of size <strong>n × t</strong>, where
+<strong>x[i, ]</strong> and <strong>y[i, ]</strong> represent the
+independent and dependent variables of the <strong>i-th</strong> unit in
+the panel data over time. On the other hand, <strong>x[, j]</strong> and
+<strong>y[, j]</strong> represent the cross-sectional data of the
+<strong>j-th</strong> time point. Thus, <strong>$x[i, t]</strong> and
+<strong>y[i, t]</strong> are the independent and dependent variables of
+the <strong>i-th</strong> unit at the <strong>j-th</strong> time point,
+and both are scalars.</p>
+<p>The purpose of the <code>_dif_</code> function is to eliminate the
+influence of the fixed effect <span class="math inline">\(\alpha_i\)</span> in the model.</p>
+<p>Then we focus on the function <code>_gpd_</code>. Due to the length
+of the function, we will not display the full code. The purpose of the
+<code>_gpd_</code> function is to take panel data <code>x</code> and
+<code>y</code>, along with the number of groups <code>G</code>, and
+output the group assignment for each panel data unit as well as the
+estimated slope for each group. It also computes the IC value to assess
+the goodness of fit of the estimated model. Specifically, the smaller
+the IC value, the better the model fit. The value of <code>G</code> that
+minimizes the IC value is considered the best estimate for the number of
+groups.</p>
+</div>
+<div id="c-function-count" class="section level2">
+<h2>C++ function <em>count</em></h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>double <span class="fu">count</span>(NumericMatrix x, NumericMatrix y, double beta, int i) {</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="sc">/</span><span class="er">/</span> 初始化平方误差的和</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  double sum <span class="ot">=</span> <span class="fl">0.0</span>;</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  </span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="sc">/</span><span class="er">/</span> 获取 y 和 x 对应行的差异 (y[i, ] <span class="sc">-</span> x[i, ] <span class="sc">*</span> beta)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="cf">for</span> (int <span class="at">j =</span> <span class="dv">0</span>; j <span class="sc">&lt;</span> <span class="fu">x.ncol</span>(); j<span class="sc">++</span>) {</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    sum <span class="sc">+</span><span class="er">=</span> <span class="fu">pow</span>(<span class="fu">y</span>(i, j) <span class="sc">-</span> <span class="fu">x</span>(i, j) <span class="sc">*</span> beta, <span class="dv">2</span>);  <span class="sc">/</span><span class="er">/</span> 计算每个元素的差的平方并累加</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  }</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  </span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  return sum;</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>}</span></code></pre></div>
+<p>The function <code>_count_</code> is responsible for calculating the
+loss function for the <span class="math inline">\(i\)</span>-th unit.
+The loss function is in the form of the least squares loss.</p>
+</div>
+<div id="examples" class="section level2">
+<h2>Examples</h2>
+<p>function <em>dif</em>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">library</span>(SA24204168)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>, <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">ncol =</span> <span class="dv">3</span>))</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="fu">matrix</span>(<span class="dv">10</span><span class="sc">:</span><span class="dv">18</span>, <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">ncol =</span> <span class="dv">3</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">dif</span>(x, y)</span></code></pre></div>
+<pre><code>## $y_diff
+##   Y1 Y2
+## 1  3  3
+## 2  3  3
+## 3  3  3
+## 
+## $x_diff
+##   X1 X2
+## 1  3  3
+## 2  3  3
+## 3  3  3</code></pre>
+<p>function <em>gpd</em>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">10</span>; t <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(n <span class="sc">*</span> t), <span class="at">nrow =</span> n, <span class="at">ncol =</span> t)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>epsilon <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(n <span class="sc">*</span> t, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="fu">sqrt</span>(<span class="fl">0.2</span>)), <span class="at">nrow =</span> n, <span class="at">ncol =</span> t)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> n, <span class="at">ncol =</span> t)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n) {</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="cf">if</span> (i <span class="sc">&lt;=</span> n <span class="sc">/</span> <span class="dv">2</span>) {</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>    y[i, ] <span class="ot">&lt;-</span> x[i, ] <span class="sc">+</span> epsilon[i, ] <span class="sc">+</span> alpha[i]</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>      y[i, ] <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> x[i, ] <span class="sc">+</span> epsilon[i, ] <span class="sc">+</span> alpha[i]</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  }</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>}</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="fu">gpd</span>(x, y, <span class="dv">2</span>)</span></code></pre></div>
+<pre><code>## $beta
+## [1] 2.0590537 0.9809918
+## 
+## $group
+##  [1] 2 2 2 2 2 1 1 1 1 1
+## 
+## $IC
+## [1] 0.8783331</code></pre>
+<p>function <em>count</em>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>, <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">ncol =</span> <span class="dv">3</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">10</span><span class="sc">:</span><span class="dv">18</span>, <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">ncol =</span> <span class="dv">3</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">count</span>(x, y, <span class="dv">1</span>, <span class="dv">1</span>)</span></code></pre></div>
+<pre><code>## [1] 243</code></pre>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
